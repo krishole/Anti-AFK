@@ -36,6 +36,18 @@ int random(int min, int max) //range : [min, max]
 	return min + rand() % (max + 1 - min);
 }
 
+void MouseMove() {
+	INPUT ip;
+	ip.type = INPUT_MOUSE;
+
+	ip.mi.mouseData = 0;
+	ip.mi.time = 0;
+	ip.mi.dwFlags = MOUSEEVENTF_MOVE;
+	ip.mi.dx = random(-100, 100);
+	ip.mi.dy = random(-100, 100);
+	SendInput(1, &ip, sizeof(INPUT));
+}
+
 int main() {
 	auto t_last = std::chrono::high_resolution_clock::now();
 	double timer = 0.0f;
@@ -61,7 +73,7 @@ int main() {
 		if (timer < nextMoveTime){
 			int waitTime = (int)(nextMoveTime / 1000) - (int)(timer / 1000);
 			nextLine = "Waiting " + std::to_string(waitTime) + " seconds to move.";
-		} else if (timer > nextMoveTime && timer < (int)(nextMoveTime + nextMoveDuration)){
+		} else if (timer > nextMoveTime && timer < (double)(nextMoveTime) +(double)(nextMoveDuration)){
 			if (!doOnce) {
 				doOnce = true;
 
@@ -90,9 +102,9 @@ int main() {
 				}
 
 				KeyEvent(lastKey, true);
-
 			}
-		} else if (timer > (int)(nextMoveTime + nextMoveDuration)) {
+			MouseMove();
+		} else if (timer > (double)(nextMoveTime) +(double)(nextMoveDuration)) {
 			doOnce = false;
 			timer = 0;
 			KeyEvent(lastKey, false);
