@@ -1,9 +1,12 @@
 #include <chrono>
 #include <iostream>
 #include <Windows.h>
+#include <random>
 #include <string>
 
+constexpr auto VK_KEY_W = 0x57;
 constexpr auto VK_KEY_A = 0x41;
+constexpr auto VK_KEY_S = 0x53;
 constexpr auto VK_KEY_D = 0x44;
 
 void KeyEvent(WORD key, bool press) {
@@ -22,57 +25,81 @@ void KeyEvent(WORD key, bool press) {
 	SendInput(1, &ip, sizeof(INPUT));
 }
 
+int random(int min, int max) //range : [min, max]
+{
+	static bool first = true;
+	if (first)
+	{
+		srand((unsigned int)(time(NULL))); //seeding for the first time only!
+		first = false;
+	}
+	return min + rand() % (max + 1 - min);
+}
+
 int main() {
 	auto t_last = std::chrono::high_resolution_clock::now();
-	bool running = true;
 	double timer = 0.0f;
+
+	int nextMoveTime = random(5000, 20000);
+	int nextMoveDuration = random(1000, 5000);
+
+	int lastKey = 0;
+	int direction = 0;
 
 	std::string lastLine = "";
 	std::string nextLine = "";
 
-	bool left_once = false;
-	bool right_once = false;
+	bool doOnce = false;
 
-	while (running) {
+	while (true) {
 		auto t_now = std::chrono::high_resolution_clock::now();
 
 		double delta_time = std::chrono::duration<double, std::milli>(t_now - t_last).count();
 		t_last = t_now;
 		timer += delta_time;
 
-		if (timer < 10000) {
-			//waiting
-			int waitTime = 60 - (int)(timer/1000);
-			nextLine = "Waiting " + std::to_string(waitTime) + " seconds to shuffle.";
-		} else if (timer > 10000 && timer < 11000) {
-			if (!left_once) {
-				left_once = true;
-				KeyEvent(VK_KEY_A, true);
-				nextLine = "Shuffle left";
+		if (timer < nextMoveTime){
+			int waitTime = (int)(nextMoveTime / 1000) - (int)(timer / 1000);
+			nextLine = "Waiting " + std::to_string(waitTime) + " seconds to move.";
+		} else if (timer > nextMoveTime && timer < (int)(nextMoveTime + nextMoveDuration)){
+			if (!doOnce) {
+				doOnce = true;
+
+				//pick a direction and move in it
+				direction = random(0, 3);
+				switch (direction) {
+					case 0:
+						lastKey = VK_KEY_W;
+						nextLine = "Move up";
+						break;
+
+					case 1:
+						lastKey = VK_KEY_S;
+						nextLine = "Move down";
+						break;
+
+					case 2:
+						lastKey = VK_KEY_A;
+						nextLine = "Move left";
+						break;
+
+					case 3:
+						lastKey = VK_KEY_D;
+						nextLine = "Move right";
+						break;
+				}
+
+				KeyEvent(lastKey, true);
+
 			}
-		} else if (timer > 11000 && timer < 13000) {
-			if (!right_once) {
-				left_once = false;
-				right_once = true;
-				KeyEvent(VK_KEY_A, false);
-				KeyEvent(VK_KEY_D, true);
-				nextLine = "Shuffle right";
-			}
-		} else if (timer > 13000 && timer < 14000) {
-			if (!left_once) {
-				right_once = false;
-				left_once = true;
-				KeyEvent(VK_KEY_D, false);
-				KeyEvent(VK_KEY_A, true);
-				nextLine = "Shuffle center";
-			}
-		} else if (timer > 14000) {
-			KeyEvent(VK_KEY_A, false);
-			left_once = false;
+		} else if (timer > (int)(nextMoveTime + nextMoveDuration)) {
+			doOnce = false;
 			timer = 0;
+			KeyEvent(lastKey, false);
+			nextMoveTime = random(5000, 20000);
+			nextMoveDuration = random(1000, 5000);
 		}
 
-		
 		if (lastLine != nextLine) {
 			if (nextLine.length() < lastLine.length()) {
 				int diff = (int)(lastLine.length() - nextLine.length());
