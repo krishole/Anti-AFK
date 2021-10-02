@@ -53,7 +53,7 @@ int main() {
 	double timer = 0.0f;
 
 	int nextMoveTime = random(5000, 20000);
-	int nextMoveDuration = random(1000, 5000);
+	int nextMoveDuration = random(500, 1500);
 
 	int lastKey = 0;
 	int direction = 0;
@@ -108,8 +108,8 @@ int main() {
 			doOnce = false;
 			timer = 0;
 			KeyEvent(lastKey, false);
-			nextMoveTime = random(5000, 20000);
-			nextMoveDuration = random(1000, 5000);
+			nextMoveTime = random(30000, 60000);
+			nextMoveDuration = random(1000, 2000);
 		}
 
 		if (lastLine != nextLine) {
